@@ -35,6 +35,8 @@ jobs:
           npm install node-xlsx --save-dev
           npm install pg --save-dev
           npm install pdf-parse --save-dev
+          npm install @cypress/code-coverage --save-dev
+          npx cypress verify
 
 
       - name: Testing on OS (${{ matrix.os }}) with Node.js (version ${{ matrix.node-version }}) attempt ${{ matrix.attempt }}
