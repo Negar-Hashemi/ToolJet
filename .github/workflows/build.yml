@@ -38,6 +38,17 @@ jobs:
           npm install @cypress/code-coverage --save-dev
           npx cypress verify
 
+      - name: Start server
+        run: |
+          npm run start &  # Adjust this if your server is started with a different command
+          # Add any necessary command to start your server here
+
+      - name: Wait for the server to be available
+        run: |
+          while ! nc -z localhost 8082; do
+            echo "Waiting for server..."
+            sleep 3
+          done
 
       - name: Testing on OS (${{ matrix.os }}) with Node.js (version ${{ matrix.node-version }}) attempt ${{ matrix.attempt }}
         working-directory: ./cypress-tests
