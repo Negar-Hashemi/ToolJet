@@ -36,5 +36,5 @@ jobs:
       - name: Testing on OS (${{ matrix.os }}) with Node.js (version ${{ matrix.node-version }}) attempt ${{ matrix.attempt }}
         run: |
           echo "Run attempt: ${{ matrix.attempt }}"
-          npx cypress run --config-file ../cypress-tests/cypress.config.js
+          npx cypress run --config-file cypress-tests/cypress.config.js
 
