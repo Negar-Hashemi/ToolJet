@@ -15,9 +15,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest] # Operating systems to test
-        node-version: [18, 20, 22]                      # Node.js versions to test
-        attempt: [1, 2, 3, 4, 5]                        # Repeat tests 5 times
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20, 22]
+        attempt: [1, 2, 3, 4, 5]
 
     steps:
       - name: Checkout code
@@ -30,24 +30,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install
-          npm install cypress --save-dev
-          npm install node-xlsx --save-dev
-          npm install pg --save-dev
-          npm install pdf-parse --save-dev
-          npm install @cypress/code-coverage --save-dev
+          npm ci
+          npx cypress install
           npx cypress verify
 
       - name: Start server
         run: |
-          npm run start &  # Adjust this if your server is started with a different command
-          # Add any necessary command to start your server here
+          npm run start &  # Ensure this command properly backgrounds the process
+          sleep 2  # Give the server some time to initialize
 
-      - name: Wait for the server to be available
+      - name: Wait for the server to be available (Windows)
+        if: runner.os == 'Windows'
         run: |
-          if [[ $RUNNER_OS == 'Windows' ]]; then
-            # For Windows: Use PowerShell to check if port 8082 is open
-            timeout=60  # 60 seconds timeout
+            timeout=60
             elapsed=0
             while (-not (Test-NetConnection -ComputerName localhost -Port 8082).TcpTestSucceeded -and $elapsed -lt $timeout) {
               Write-Host "Waiting for server..."
@@ -56,11 +51,13 @@ jobs:
             }
             if ($elapsed -ge $timeout) {
               Write-Host "Server did not start in time. Failing the test."
-              exit 1  # Fail the test if the server is not up within the timeout period
+              exit 1
             }
-          else
-            # For Linux/macOS: Use nc to check if the port is open
-            timeout=60  # 60 seconds timeout
+
+      - name: Wait for the server to be available (Linux/macOS)
+        if: runner.os == 'macOS' || runner.os == 'Linux'
+        run: |
+            timeout=60
             elapsed=0
             while ! nc -z localhost 8082 && [ $elapsed -lt $timeout ]; do
               echo "Waiting for server..."
@@ -69,9 +66,8 @@ jobs:
             done
             if [ $elapsed -ge $timeout ]; then
               echo "Server did not start in time. Failing the test."
-              exit 1  # Fail the test if the server is not up within the timeout period
+              exit 1
             fi
-          fi
 
       - name: Testing on OS (${{ matrix.os }}) with Node.js (version ${{ matrix.node-version }}) attempt ${{ matrix.attempt }}
         working-directory: ./cypress-tests
@@ -79,4 +75,6 @@ jobs:
           echo "Run attempt: ${{ matrix.attempt }}"
           npx cypress run --config-file cypress.config.js
 
-
+      - name: Print server logs on failure
+        if: failure()
+        run: cat logs/server.log || echo "No logs found"
